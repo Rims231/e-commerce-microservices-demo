@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../eCommerce.Project/eCommerce.SharedLibrary/eCommerce.SharedLibrary.csproj" />
+  <Project Path="eCommerce.Order.Application/eCommerce.Order.Application.csproj" />
+  <Project Path="eCommerce.Order.Domain/eCommerce.Order.Domain.csproj" />
+  <Project Path="eCommerce.Order.Infrastructure/eCommerce.Order.Infrastructure.csproj" />
+  <Project Path="eCommerce.Order.Presentation/eCommerce.Order.Presentation.csproj" />
+</Solution>
