@@ -1,0 +1,2 @@
+2026-05-01 08:09:46.229 +01:00 [INF] IDX10720: Unable to create KeyedHashAlgorithm for algorithm 'HS256', the key size must be greater than: '256' bits, key has '192' bits. (Parameter 'keyBytes')
+2026-05-01 08:09:46.317 +01:00 [WRN] IDX10720: Unable to create KeyedHashAlgorithm for algorithm 'HS256', the key size must be greater than: '256' bits, key has '192' bits. (Parameter 'keyBytes')
