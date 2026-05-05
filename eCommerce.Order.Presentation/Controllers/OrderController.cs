@@ -11,10 +11,10 @@ namespace eCommerce.Order.Presentation.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    [AllowAnonymous]
     public class OrderController(IOrder orderInterface) : ControllerBase
     {
         [HttpPost]
+        [Authorize(Roles = "User, Admin")]
         public async Task<ActionResult<Response>> PlaceOrder(OrderDTO orderDTO)
         {
             if (!ModelState.IsValid)
@@ -26,6 +26,7 @@ namespace eCommerce.Order.Presentation.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Response>> UpdateOrder(OrderDTO orderDTO)
         {
             if (!ModelState.IsValid)
@@ -37,6 +38,7 @@ namespace eCommerce.Order.Presentation.Controllers
         }
 
         [HttpDelete]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Response>> DeleteOrder(OrderDTO orderDTO)
         {
             if (!ModelState.IsValid)
@@ -48,6 +50,7 @@ namespace eCommerce.Order.Presentation.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<OrderDTO>>> GetOrders()
         {
             var orders = await orderInterface.GetAllAsync();
@@ -59,6 +62,7 @@ namespace eCommerce.Order.Presentation.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "User, Admin")]
         public async Task<ActionResult<OrderDTO>> GetOrder(int id)
         {
             var order = await orderInterface.GetByIdAsync(id);
@@ -70,6 +74,7 @@ namespace eCommerce.Order.Presentation.Controllers
         }
 
         [HttpGet("client/{clientId:int}")]
+        [Authorize(Roles = "User, Admin")]
         public async Task<ActionResult<IEnumerable<OrderDTO>>> GetOrdersByClientId(int clientId)
         {
             var orders = await orderInterface.GetOrdersAsync(o => o.ClientId == clientId);
