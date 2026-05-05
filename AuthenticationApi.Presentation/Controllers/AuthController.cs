@@ -9,6 +9,7 @@ namespace AuthenticationApi.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AuthController(IUser userInterface) : ControllerBase
     {
         [HttpPost("register")]
