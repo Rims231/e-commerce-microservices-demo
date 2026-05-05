@@ -39,9 +39,6 @@ app.UseMiddleware<AttachSignatureToRequest>();
 // Use Ocelot middleware
 await app.UseOcelot();
 
-// Use Ocelot middleware
-await app.UseOcelot();
-
 app.MapControllers();
 
 app.Run();
