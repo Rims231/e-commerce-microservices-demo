@@ -1,5 +1,6 @@
 ﻿using eCommerce.Order.Application.DTOs;
 using eCommerce.Order.Application.Interfaces;
+using eCommerce.SharedLibrary.Logs;
 using eCommerce.SharedLibrary.Response;
 using Microsoft.Extensions.Logging;
 using Polly.Registry;
@@ -16,37 +17,52 @@ namespace eCommerce.Order.Application.Services
     {
         public async Task<Response> PlaceOrder(OrderDTO orderDTO)
         {
-            // Check product availability via Product API
-            var pipeline = resiliencePipeline.GetPipeline("my-pipeline");
-
-            var product = await pipeline.ExecuteAsync(async token =>
-                await httpClient.GetFromJsonAsync<ProductDTO>
-                ($"api/products/{orderDTO.ProductId}", token));
-
-            if (product is null)
-                return new Response(false, "Product not found");
-
-            if (product.Quantity < orderDTO.PurchaseQuantity)
-                return new Response(false, "Insufficient product quantity");
-
-            var getOrder = await orderInterface.GetByAsync(o =>
-                o.ProductId == orderDTO.ProductId &&
-                o.ClientId == orderDTO.ClientId);
-
-            if (getOrder is not null)
-                return new Response(false, "Order already placed");
-
-            // Map DTO to entity
-            var order = new OrderEntity()
+            try
             {
-                ProductId = orderDTO.ProductId,
-                ClientId = orderDTO.ClientId,
-                PurchaseQuantity = orderDTO.PurchaseQuantity,
-                OrderedDate = DateTime.UtcNow
-            };
+                var pipeline = resiliencePipeline.GetPipeline("my-pipeline");
 
-            var result = await orderInterface.CreateAsync(order);
-            return result;
+                // Safely get product — handle 404 without throwing
+                ProductDTO? product = null;
+                try
+                {
+                    product = await pipeline.ExecuteAsync(async token =>
+                        await httpClient.GetFromJsonAsync<ProductDTO>
+                        ($"api/products/{orderDTO.ProductId}", token));
+                }
+                catch (HttpRequestException)
+                {
+                    return new Response(false, "Product not found");
+                }
+
+                if (product is null)
+                    return new Response(false, "Product not found");
+
+                if (product.Quantity < orderDTO.PurchaseQuantity)
+                    return new Response(false, "Insufficient product quantity");
+
+                var getOrder = await orderInterface.GetByAsync(o =>
+                    o.ProductId == orderDTO.ProductId &&
+                    o.ClientId == orderDTO.ClientId);
+
+                if (getOrder is not null)
+                    return new Response(false, "Order already placed");
+
+                var order = new OrderEntity()
+                {
+                    ProductId = orderDTO.ProductId,
+                    ClientId = orderDTO.ClientId,
+                    PurchaseQuantity = orderDTO.PurchaseQuantity,
+                    OrderedDate = DateTime.UtcNow
+                };
+
+                var result = await orderInterface.CreateAsync(order);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                LogExceptions.LogException(ex);
+                return new Response(false, ex.Message);
+            }
         }
 
         public async Task<Response> UpdateOrder(OrderDTO orderDTO)
@@ -55,7 +71,6 @@ namespace eCommerce.Order.Application.Services
             if (getOrder is null)
                 return new Response(false, "Order not found");
 
-            // Map DTO to entity
             getOrder.ProductId = orderDTO.ProductId;
             getOrder.ClientId = orderDTO.ClientId;
             getOrder.PurchaseQuantity = orderDTO.PurchaseQuantity;
@@ -100,15 +115,19 @@ namespace eCommerce.Order.Application.Services
         {
             var orders = await orderInterface.GetOrdersAsync(o => o.ClientId == clientId);
 
-            // Enrich each order with product details via Product API
             var pipeline = resiliencePipeline.GetPipeline("my-pipeline");
             var orderDetailsList = new List<OrderDetailsDTO>();
 
             foreach (var order in orders)
             {
-                var product = await pipeline.ExecuteAsync(async token =>
-                    await httpClient.GetFromJsonAsync<ProductDTO>
-                    ($"api/products/{order.ProductId}", token));
+                ProductDTO? product = null;
+                try
+                {
+                    product = await pipeline.ExecuteAsync(async token =>
+                        await httpClient.GetFromJsonAsync<ProductDTO>
+                        ($"api/products/{order.ProductId}", token));
+                }
+                catch (HttpRequestException) { }
 
                 orderDetailsList.Add(new OrderDetailsDTO(
                     order.Id,
@@ -125,6 +144,17 @@ namespace eCommerce.Order.Application.Services
             }
 
             return orderDetailsList;
+        }
+
+        public async Task<AppUserDTO> GetAppUser(int userId)
+        {
+            var pipeline = resiliencePipeline.GetPipeline("my-pipeline");
+
+            var user = await pipeline.ExecuteAsync(async token =>
+                await httpClient.GetFromJsonAsync<AppUserDTO>
+                ($"api/Auth/{userId}", token));
+
+            return user!;
         }
     }
 }
