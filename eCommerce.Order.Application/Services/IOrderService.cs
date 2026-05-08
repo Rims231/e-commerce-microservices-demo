@@ -11,5 +11,7 @@ namespace eCommerce.Order.Application.Services
         Task<IEnumerable<OrderDTO>> GetOrders();
         Task<OrderDTO> GetOrder(int id);
         Task<IEnumerable<OrderDetailsDTO>> GetOrdersByClientId(int clientId);
+
+        Task<AppUserDTO> GetAppUser(int userId);
     }
 }
